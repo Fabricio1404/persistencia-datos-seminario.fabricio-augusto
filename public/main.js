@@ -2,9 +2,9 @@ const BASE_URL = window.location.origin;
 
 let clienteId = localStorage.getItem("clienteId");
 
-// Obtener ID
+// Obtiene o recupera un ID de cliente para separar datos por navegador.
 async function obtenerId() {
-    let idGuardado = localStorage.getItem("clienteId");
+    const idGuardado = localStorage.getItem("clienteId");
 
     let url = BASE_URL + "/identificar";
 
@@ -12,18 +12,22 @@ async function obtenerId() {
         url += "/" + idGuardado;
     }
 
-    let res = await fetch(url);
-    let data = await res.json();
+    const res = await fetch(url);
+    const data = await res.json();
 
     clienteId = data.id;
     localStorage.setItem("clienteId", clienteId);
 }
 
-// Agregar alumno
+// Envía un alumno al backend y vuelve a renderizar la tabla.
 async function agregarPersona() {
-    let nombre = document.getElementById("nombre").value;
-    let edad = document.getElementById("edad").value;
-    let nota = document.getElementById("nota").value;
+    const nombreInput = document.getElementById("nombre");
+    const edadInput = document.getElementById("edad");
+    const notaInput = document.getElementById("nota");
+
+    const nombre = nombreInput.value.trim();
+    const edad = edadInput.value;
+    const nota = notaInput.value;
 
     if (nombre === "" || edad === "" || nota === "") {
         alert("Complete todos los campos");
@@ -45,28 +49,24 @@ async function agregarPersona() {
 
     mostrar();
 
-    document.getElementById("nombre").value = "";
-    document.getElementById("edad").value = "";
-    document.getElementById("nota").value = "";
+    nombreInput.value = "";
+    edadInput.value = "";
+    notaInput.value = "";
 }
 
-// Mostrar alumnos
+// Renderiza la lista ya ordenada por el servidor.
 async function mostrar() {
-    let res = await fetch(BASE_URL + "/alumnos/" + clienteId);
-    let data = await res.json();
+    const res = await fetch(BASE_URL + "/alumnos/" + clienteId);
+    const data = await res.json();
 
-    let tabla = document.getElementById("tabla");
-    tabla.innerHTML = "";
-
-    data.forEach(p => {
-        tabla.innerHTML += `
-            <tr>
-                <td>${p.nombre}</td>
-                <td>${p.edad}</td>
-                <td>${p.nota}</td>
-            </tr>
-        `;
-    });
+    const tabla = document.getElementById("tabla");
+    tabla.innerHTML = data.map((p) => `
+        <tr>
+            <td>${p.nombre}</td>
+            <td>${p.edad}</td>
+            <td>${p.nota}</td>
+        </tr>
+    `).join("");
 }
 
 // Inicializar

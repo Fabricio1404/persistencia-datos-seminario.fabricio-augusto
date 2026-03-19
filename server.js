@@ -1,26 +1,24 @@
 const express = require("express");
-const cors = require("cors");
 const { v4: uuidv4 } = require("uuid");
 const path = require("path");
 
 const app = express();
 app.use(express.json());
-app.use(cors());
 
-// Servir HTML y JS
+// Sirve todo lo que esta dentro de /public (HTML, JS, CSS).
 app.use(express.static(path.join(__dirname, "public")));
 
-// Memoria del servidor
-let alumnosPorCliente = {};
+// Estructura en memoria: { [clienteId]: [{ nombre, edad, nota }] }
+const alumnosPorCliente = {};
 
-// 🔹 SIN ID → crear nuevo
+// Si el cliente no tiene ID, se crea uno nuevo y se inicializa su lista.
 app.get("/identificar", (req, res) => {
     const id = uuidv4();
     alumnosPorCliente[id] = [];
     res.json({ id });
 });
 
-// 🔹 CON ID → reutilizar
+// Si ya tiene ID, se reutiliza; si no existe en memoria, se crea vacio.
 app.get("/identificar/:id", (req, res) => {
     const id = req.params.id;
 
@@ -31,11 +29,13 @@ app.get("/identificar/:id", (req, res) => {
     res.json({ id });
 });
 
-// Guardar alumno
+// Guarda un alumno para el cliente actual.
 app.post("/alumnos", (req, res) => {
     const { id, nombre, edad, nota } = req.body;
+    const edadNumero = Number(edad);
+    const notaNumero = Number(nota);
 
-    if (!id || !nombre || !edad || !nota) {
+    if (!id || !nombre || !Number.isFinite(edadNumero) || !Number.isFinite(notaNumero)) {
         return res.status(400).json({ error: "Datos incompletos" });
     }
 
@@ -44,18 +44,18 @@ app.post("/alumnos", (req, res) => {
     }
 
     alumnosPorCliente[id].push({
-        nombre,
-        edad: parseInt(edad),
-        nota: parseFloat(nota)
+        nombre: nombre.trim(),
+        edad: edadNumero,
+        nota: notaNumero
     });
 
     res.json({ mensaje: "Alumno guardado" });
 });
 
-// Obtener alumnos ORDENADOS
+// Devuelve la lista ordenada por nota (desc) y luego por nombre (asc).
 app.get("/alumnos/:id", (req, res) => {
     const id = req.params.id;
-    let lista = alumnosPorCliente[id] || [];
+    const lista = alumnosPorCliente[id] || [];
 
     lista.sort((a, b) => {
         if (b.nota !== a.nota) {
@@ -67,7 +67,7 @@ app.get("/alumnos/:id", (req, res) => {
     res.json(lista);
 });
 
-// Levantar servidor en red
+// Escucha en toda la red local para permitir acceso desde otros dispositivos.
 app.listen(3000, "0.0.0.0", () => {
     console.log("Servidor corriendo en http://localhost:3000");
 });
